@@ -222,7 +222,7 @@ void setColor(int redValue, int greenValue, int blueValue) {
 }
 
 void sendFallNotification() {
-  http.begin("http://maker.ifttt.com/trigger/Fall_detect/with/key/dL_eQ1RwjirqHa02INa_8T");
+  http.begin("http://maker.ifttt.com/trigger/Fall_detect/with/key/"KEY"");
   int httpCode = http.GET();
 
   //chech if the message was sent succesfuly (blue flash - succes and 4 times red unsuccessfuk)

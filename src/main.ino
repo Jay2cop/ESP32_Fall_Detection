@@ -301,17 +301,12 @@ void sendFallNotification() {
   //chech if the message was sent succesfuly (blue flash - succes and 4 times red unsuccessfuk)
   if (httpCode > 0) {
     setColor(0,0,255);
-    delay(500);
-    setColor(255, 0, 0);
+    delay(200);
+    setColor(0, 255, 0);
   } else {
     setColor(255,0,0);
-    delay(500);
-    setColor(255,0,0);
-    delay(500);
-    setColor(255,0,0);
-    delay(500);
-    setColor(255,0,0);
-    delay(500);
+    delay(200);
+    setColor(255, 0, 0);
   }
   http.end();
 }
@@ -329,17 +324,12 @@ void sendResetFallNotification() {
   //chech if the message was sent succesfuly (blue flash - succes and 4 times red unsuccessfuk)
   if (httpCode > 0) {
     setColor(0,0,255);
-    delay(500);
-    setColor(255, 0, 0);
+    delay(200);
+    setColor(0, 255, 0);
   } else {
     setColor(255,0,0);
-    delay(500);
-    setColor(255,0,0);
-    delay(500);
-    setColor(255,0,0);
-    delay(500);
-    setColor(255,0,0);
-    delay(500);
+    delay(200);
+    setColor(255, 0, 0);
   }
   http.end();
 }

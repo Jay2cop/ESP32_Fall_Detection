@@ -1,22 +1,26 @@
-# Build artifacts
+# PlatformIO / ESP32
+.pio/
+.vscode/
+
+# Arduino IDE artifacts
+.arduinoIDE/
+
+# Build directories
+build/
+Debug/
+Release/
+CMakeFiles/
+cmake-build-*/
+
+# Compiled objects
 *.o
 *.elf
 *.bin
 *.hex
 *.map
 *.d
-build/
-Debug/
-Release/
 
-# PlatformIO / ESP32
-.pio/
-.vscode/
-
-# Arduino IDE
-.arduinoIDE/
-
-# Secrets and configuration
+# Secrets & local config
 include/config.h
 config.h
 secrets.h

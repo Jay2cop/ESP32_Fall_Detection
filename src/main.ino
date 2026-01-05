@@ -5,7 +5,67 @@
 #include <WebServer.h>
 #include <EEPROM.h>
 
+#if defined(__has_include)
+#if __has_include("config.h")
+#include "config.h"
+#elif __has_include("../include/config.h")
+#include "../include/config.h"
+#else
+#define ALERT_CONFIG_MISSING 1
+#endif
+#else
+#include "config.h"
+#endif
+
+#ifdef ALERT_CONFIG_MISSING
+#define ALERT_WEBHOOK_BASE_URL ""
+#define ALERT_WEBHOOK_TRIGGER_PATH ""
+#define ALERT_WEBHOOK_AUTH_PATH ""
+#define ALERT_FALL_EVENT ""
+#define ALERT_RESET_EVENT ""
+#define ALERT_COLLECTION_EVENT ""
+#define ALERT_WEBHOOK_CREDENTIAL ""
+#endif
+
+#ifndef DEVICE_NAME
+#define DEVICE_NAME "ESP32 Fall Detector"
+#endif
+
+#ifndef ENABLE_DEBUG_LOGS
+#define ENABLE_DEBUG_LOGS 0
+#endif
+
+#ifndef ALERT_CONFIG_MISSING
+#ifndef ALERT_WEBHOOK_BASE_URL
+#error "ALERT_WEBHOOK_BASE_URL must be defined in config.h"
+#endif
+#ifndef ALERT_WEBHOOK_TRIGGER_PATH
+#error "ALERT_WEBHOOK_TRIGGER_PATH must be defined in config.h"
+#endif
+#ifndef ALERT_WEBHOOK_AUTH_PATH
+#error "ALERT_WEBHOOK_AUTH_PATH must be defined in config.h"
+#endif
+#ifndef ALERT_FALL_EVENT
+#error "ALERT_FALL_EVENT must be defined in config.h"
+#endif
+#ifndef ALERT_RESET_EVENT
+#error "ALERT_RESET_EVENT must be defined in config.h"
+#endif
+#ifndef ALERT_COLLECTION_EVENT
+#error "ALERT_COLLECTION_EVENT must be defined in config.h"
+#endif
+#ifndef ALERT_WEBHOOK_CREDENTIAL
+#error "ALERT_WEBHOOK_CREDENTIAL must be defined in config.h"
+#endif
+#endif
+
 WebServer server(80);
+
+#ifdef ALERT_CONFIG_MISSING
+const bool alertsConfigured = false;
+#else
+const bool alertsConfigured = true;
+#endif
 
 //Network configuration
 const char* default_ssid;
@@ -56,12 +116,18 @@ void writeToEEPROM(int startAddr, const String &data);
 String readFromEEPROM(int startAddr);
 void sleepWakeUp();
 void connectToWiFi();
+String buildWebhookUrl(const char* eventName);
+void appendPathSegment(String &target, const char* segment);
 
 
 void setup() {
 
   //begin serial communication
   Serial.begin(4800);
+
+#if defined(ALERT_CONFIG_MISSING)
+  Serial.println("Missing include/config.h - HTTP alerts disabled. Copy include/config.example.h to include/config.h.");
+#endif
 
   //brgin communicatiin
   Wire.begin();
@@ -222,7 +288,13 @@ void setColor(int redValue, int greenValue, int blueValue) {
 }
 
 void sendFallNotification() {
-  http.begin("http://maker.ifttt.com/trigger/Fall_detect/with/key/"KEY"");
+  if (!alertsConfigured) {
+    Serial.println("Skipping fall notification because config.h is missing.");
+    return;
+  }
+
+  String url = buildWebhookUrl(ALERT_FALL_EVENT);
+  http.begin(url);
   int httpCode = http.GET();
 
   //chech if the message was sent succesfuly (blue flash - succes and 4 times red unsuccessfuk)
@@ -244,7 +316,13 @@ void sendFallNotification() {
 }
 
 void sendResetFallNotification() {
-  http.begin("url to IFTTT");
+  if (!alertsConfigured) {
+    Serial.println("Skipping reset notification because config.h is missing.");
+    return;
+  }
+
+  String url = buildWebhookUrl(ALERT_RESET_EVENT);
+  http.begin(url);
   int httpCode = http.GET(); //Make a request
 
   //chech if the message was sent succesfuly (blue flash - succes and 4 times red unsuccessfuk)
@@ -266,7 +344,11 @@ void sendResetFallNotification() {
 }
 
 void sendFallCollectionData(float accelTotal, float gyroX, float gyroY, float gyroZ) {
-  String url = "URL to IFTTT";
+  if (!alertsConfigured) {
+    return;
+  }
+
+  String url = buildWebhookUrl(ALERT_COLLECTION_EVENT);
   url += "?value1=" + String(accelTotal);
   url += "&value2=" + String(gyroX) + "," + String(gyroY) + "," + String(gyroZ);
   http.begin(url);
@@ -383,4 +465,30 @@ void sleepWakeUp() {
       enterDeepSleep();
     }
   }
+}
+
+String buildWebhookUrl(const char* eventName) {
+  String url = String(ALERT_WEBHOOK_BASE_URL);
+  appendPathSegment(url, ALERT_WEBHOOK_TRIGGER_PATH);
+  url += eventName;
+  appendPathSegment(url, ALERT_WEBHOOK_AUTH_PATH);
+  url += ALERT_WEBHOOK_CREDENTIAL;
+  return url;
+}
+
+void appendPathSegment(String &target, const char* segment) {
+  if (segment == nullptr || segment[0] == '\0') {
+    return;
+  }
+
+  bool targetEndsWithSlash = target.endsWith("/");
+  bool segmentStartsWithSlash = segment[0] == '/';
+
+  if (targetEndsWithSlash && segmentStartsWithSlash) {
+    target.remove(target.length() - 1);
+  } else if (!targetEndsWithSlash && !segmentStartsWithSlash) {
+    target += "/";
+  }
+
+  target += segment;
 }

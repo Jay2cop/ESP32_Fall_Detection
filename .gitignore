@@ -1,6 +1,8 @@
 # PlatformIO / ESP32
 .pio/
 .vscode/
+.idea/
+.vs/
 
 # Arduino IDE artifacts
 .arduinoIDE/
@@ -30,3 +32,8 @@ secrets.h
 .DS_Store
 Thumbs.db
 *.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.pyc

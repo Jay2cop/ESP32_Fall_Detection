@@ -1,0 +1,28 @@
+# Build artifacts
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+*.d
+build/
+Debug/
+Release/
+
+# PlatformIO / ESP32
+.pio/
+.vscode/
+
+# Arduino IDE
+.arduinoIDE/
+
+# Secrets and configuration
+include/config.h
+config.h
+secrets.h
+*.env
+
+# OS / IDE junk
+.DS_Store
+Thumbs.db
+*.log

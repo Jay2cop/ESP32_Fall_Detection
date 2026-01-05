@@ -4,6 +4,7 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <EEPROM.h>
+#include <cstring>
 
 #if defined(__has_include)
 #if __has_include("config.h")
@@ -24,7 +25,7 @@
 #define ALERT_FALL_EVENT ""
 #define ALERT_RESET_EVENT ""
 #define ALERT_COLLECTION_EVENT ""
-#define ALERT_WEBHOOK_CREDENTIAL ""
+#define ALERT_WEBHOOK_KEY ""
 #endif
 
 #ifndef DEVICE_NAME
@@ -54,8 +55,8 @@
 #ifndef ALERT_COLLECTION_EVENT
 #error "ALERT_COLLECTION_EVENT must be defined in config.h"
 #endif
-#ifndef ALERT_WEBHOOK_CREDENTIAL
-#error "ALERT_WEBHOOK_CREDENTIAL must be defined in config.h"
+#ifndef ALERT_WEBHOOK_KEY
+#error "ALERT_WEBHOOK_KEY must be defined in config.h"
 #endif
 #endif
 
@@ -472,7 +473,16 @@ String buildWebhookUrl(const char* eventName) {
   appendPathSegment(url, ALERT_WEBHOOK_TRIGGER_PATH);
   url += eventName;
   appendPathSegment(url, ALERT_WEBHOOK_AUTH_PATH);
-  url += ALERT_WEBHOOK_CREDENTIAL;
+  url += ALERT_WEBHOOK_KEY;
+
+#if ENABLE_DEBUG_LOGS
+  String maskedUrl = url;
+  if (strlen(ALERT_WEBHOOK_KEY) > 0) {
+    maskedUrl.replace(ALERT_WEBHOOK_KEY, "<KEY>");
+  }
+  Serial.print("Webhook URL: ");
+  Serial.println(maskedUrl);
+#endif
   return url;
 }
 

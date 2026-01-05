@@ -124,7 +124,7 @@ void appendPathSegment(String &target, const char* segment);
 void setup() {
 
   //begin serial communication
-  Serial.begin(4800);
+  Serial.begin(115200);
 
 #if defined(ALERT_CONFIG_MISSING)
   Serial.println("Missing include/config.h - HTTP alerts disabled. Copy include/config.example.h to include/config.h.");

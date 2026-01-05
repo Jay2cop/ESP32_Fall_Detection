@@ -89,8 +89,10 @@ const float gyroThreshold = 210.0; // Threshold for significant gyroscope change
 
 //EEEPROM
 const int EEPROM_SIZE = 512;
-const int SSID_ADDR = 0;           
-const int PASSWORD_ADDR = 32;     
+const int SSID_ADDR = 0;
+const int PASSWORD_ADDR = 32;
+const int SSID_SLOT_SIZE = 32;
+const int PASSWORD_SLOT_SIZE = 64;
 
 //Bool for triggers
 bool potentialFall = false;
@@ -113,8 +115,8 @@ void enterDeepSleep();
 void sendResetFallNotification();
 bool isButtonPressedFor(unsigned long duration);
 void startHotspotMode();
-void writeToEEPROM(int startAddr, const String &data);
-String readFromEEPROM(int startAddr);
+void writeToEEPROM(int startAddr, const String &data, int maxLen);
+String readFromEEPROM(int startAddr, int maxLen);
 void sleepWakeUp();
 void connectToWiFi();
 String buildWebhookUrl(const char* eventName);
@@ -208,8 +210,8 @@ void loop() {
     if (currentMillis - lastReconnectAttempt >= reconnectInterval) {
       lastReconnectAttempt = currentMillis;
       WiFi.disconnect(true);
-      String ssid = readFromEEPROM(SSID_ADDR);
-      String password = readFromEEPROM(PASSWORD_ADDR);
+      String ssid = readFromEEPROM(SSID_ADDR, SSID_SLOT_SIZE);
+      String password = readFromEEPROM(PASSWORD_ADDR, PASSWORD_SLOT_SIZE);
       WiFi.begin(ssid.c_str(), password.c_str());
     }
     setColor(0, 0, 255);
@@ -394,8 +396,8 @@ void startHotspotMode() {
     String ssid = server.arg("ssid");
     String password = server.arg("password");
 
-    writeToEEPROM(SSID_ADDR, ssid);
-    writeToEEPROM(PASSWORD_ADDR, password);
+    writeToEEPROM(SSID_ADDR, ssid, SSID_SLOT_SIZE);
+    writeToEEPROM(PASSWORD_ADDR, password, PASSWORD_SLOT_SIZE);
 
     server.send(200, "text/plain", "Saved. Restarting...");
     delay(1000);
@@ -404,21 +406,26 @@ void startHotspotMode() {
   server.begin();
 }
 
-void writeToEEPROM(int startAddr, const String &data) {
-  int i;
-  for (i = 0; i < data.length(); ++i) {
+void writeToEEPROM(int startAddr, const String &data, int maxLen) {
+  int charsToWrite = min((int)data.length(), maxLen - 1);
+  int i = 0;
+  for (; i < charsToWrite; ++i) {
     EEPROM.write(startAddr + i, data[i]);
   }
   EEPROM.write(startAddr + i, '\0');
+
+  for (int j = i + 1; j < maxLen; ++j) {
+    EEPROM.write(startAddr + j, 0);
+  }
+
   EEPROM.commit();
 }
 
-String readFromEEPROM(int startAddr) {
+String readFromEEPROM(int startAddr, int maxLen) {
     String data = "";
-    char ch;
-    for (int i = 0; i < EEPROM_SIZE; ++i) {
-        ch = EEPROM.read(startAddr + i);
-        if (ch == '\0') {
+    for (int i = 0; i < maxLen; ++i) {
+        char ch = EEPROM.read(startAddr + i);
+        if (ch == '\0' || ch == 0xFF) {
             break;
         }
         data += ch;
@@ -427,8 +434,8 @@ String readFromEEPROM(int startAddr) {
 }
 
 void connectToWiFi(){
-  String ssid = readFromEEPROM(SSID_ADDR);
-  String password = readFromEEPROM(PASSWORD_ADDR);
+  String ssid = readFromEEPROM(SSID_ADDR, SSID_SLOT_SIZE);
+  String password = readFromEEPROM(PASSWORD_ADDR, PASSWORD_SLOT_SIZE);
   WiFi.begin(ssid.c_str(), password.c_str());
 
   unsigned long startAttemptTime = millis();
